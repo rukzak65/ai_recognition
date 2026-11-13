@@ -5,6 +5,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+/db.local.yaml
 /request.json
 /expected.json
 *.pdf

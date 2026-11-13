@@ -1,0 +1,3 @@
+dsn: "postgresql://test_user@db-host.example:5433/bankruptcy"
+password: |-
+  REPLACE_WITH_DATABASE_PASSWORD

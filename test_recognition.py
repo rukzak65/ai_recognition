@@ -6,6 +6,7 @@ from pathlib import Path
 import psycopg
 import pytest
 import requests
+import yaml
 
 
 OPERATION = "POST /integration/accompany/v1/ai-agent/recognition-result"
@@ -24,8 +25,12 @@ def test_agent_recognizes_document():
     if not isinstance(expected_fields, dict) or not expected_fields:
         pytest.fail("Укажи поля для проверки в expected.json")
 
+    with open("db.local.yaml", encoding="utf-8") as file:
+        db_config = yaml.safe_load(file)
+
     with psycopg.connect(
-        os.environ["DB_DSN"],
+        db_config["dsn"],
+        password=db_config["password"],
         connect_timeout=5,
         autocommit=True,
     ) as db:

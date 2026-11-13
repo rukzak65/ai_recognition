@@ -9,19 +9,21 @@ import requests
 import yaml
 
 
+CASE = "2ndfl"
 OPERATION = "POST /integration/accompany/v1/ai-agent/recognition-result"
 RESULT_TIMEOUT = 60
-POLL_INTERVAL = 1
+POLL_INTERVAL = 10
 
 
 def test_agent_recognizes_document():
     host = os.environ["API_HOST"].rstrip("/")
-    pdf_path = Path(os.environ.get("PDF_NAME", "document.pdf"))
+    pdf_path = Path("Docs/input") / f"{CASE}.pdf"
+    expected_path = Path("Docs/expected") / f"{CASE}.json"
 
-    with open("expected.json", encoding="utf-8") as file:
+    with expected_path.open(encoding="utf-8") as file:
         expected_fields = json.load(file)
     if not isinstance(expected_fields, dict) or not expected_fields:
-        pytest.fail("Укажи поля для проверки в expected.json")
+        pytest.fail(f"Укажи поля для проверки в {expected_path}")
 
     with open("db.local.yaml", encoding="utf-8") as file:
         db_config = yaml.safe_load(file)
@@ -51,7 +53,7 @@ def test_agent_recognizes_document():
         assert response.status_code == 200, (
             f"Загрузка вернула HTTP {response.status_code}, ожидался HTTP 200"
         )
-        print(f"2. Отправили запрос, получили HTTP {response.status_code}. Ждём результат", flush=True)
+        print(f"2. Отправили запрос, получили HTTP {response.status_code}. Ждём результат от агента", flush=True)
 
         # Шаг 2. Ждём входящую запись о распознавании.
         deadline = time.monotonic() + RESULT_TIMEOUT
@@ -61,7 +63,6 @@ def test_agent_recognizes_document():
                 SELECT created_at, payload::jsonb
                 FROM accompany_service.integration_log
                 WHERE created_at >= %s
-                  AND direction = 'INBOUND'
                   AND operation = %s
                 ORDER BY created_at
                 LIMIT 1

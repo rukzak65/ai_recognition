@@ -20,7 +20,7 @@
 6. Запусти тест из папки проекта. Тест прочитает строку подключения и пароль из `db.local.yaml`.
 
 ```bash
-uv run --env-file .env python -m pytest -q test_recognition.py
+uv run --env-file .env python -m pytest -q -s
 ```
 
 ### Интервал опроса и таймаут

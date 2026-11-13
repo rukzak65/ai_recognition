@@ -15,7 +15,7 @@ POLL_INTERVAL = 1
 
 
 def test_agent_recognizes_document():
-    host = os.environ["UPLOAD_HOST"].rstrip("/")
+    host = os.environ["API_HOST"].rstrip("/")
     pdf_path = Path(os.environ.get("PDF_NAME", "document.pdf"))
 
     with open("expected.json", encoding="utf-8") as file:
@@ -35,6 +35,7 @@ def test_agent_recognizes_document():
         # Шаг 1. Запоминаем время по часам БД и загружаем файлы.
         with open("request.json", "rb") as metadata, pdf_path.open("rb") as pdf:
             sent_at = db.execute("SELECT clock_timestamp()").fetchone()[0]
+            print(f"1. Запомнили время перед отправкой по часам БД: {sent_at}", flush=True)
             response = requests.post(
                 f"{host}/accompany/v1/document/upload",
                 files={
@@ -50,6 +51,7 @@ def test_agent_recognizes_document():
         assert response.status_code == 200, (
             f"Загрузка вернула HTTP {response.status_code}, ожидался HTTP 200"
         )
+        print(f"2. Отправили запрос, получили HTTP {response.status_code}. Ждём результат", flush=True)
 
         # Шаг 2. Ждём входящую запись о распознавании.
         deadline = time.monotonic() + RESULT_TIMEOUT

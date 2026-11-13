@@ -1,7 +1,6 @@
 import json
 import os
 import time
-from getpass import getpass
 from pathlib import Path
 
 import psycopg
@@ -27,7 +26,6 @@ def test_agent_recognizes_document():
 
     with psycopg.connect(
         os.environ["DB_DSN"],
-        password=getpass("Пароль PostgreSQL: "),
         connect_timeout=5,
         autocommit=True,
     ) as db:

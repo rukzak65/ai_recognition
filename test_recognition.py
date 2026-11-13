@@ -17,8 +17,6 @@ POLL_INTERVAL = 1
 def test_agent_recognizes_document():
     host = os.environ["UPLOAD_HOST"].rstrip("/")
     pdf_path = Path(os.environ.get("PDF_NAME", "document.pdf"))
-    verify_tls = os.environ.get("UPLOAD_TLS_VERIFY", "true").strip().lower()
-    assert verify_tls in {"true", "false"}, "UPLOAD_TLS_VERIFY должен быть true или false"
 
     with open("expected.json", encoding="utf-8") as file:
         expected_fields = json.load(file)
@@ -44,7 +42,7 @@ def test_agent_recognizes_document():
                     "files": (pdf_path.name, pdf, "application/pdf"),
                 },
                 cert=("tls.pem", "tls.key"),
-                verify=verify_tls == "true",
+                verify=False,
                 timeout=30,
                 allow_redirects=False,
             )

@@ -6,7 +6,6 @@ __pycache__/
 .env.*
 !.env.example
 /db.local.yaml
-/request.json
 /expected.json
 *.pdf
 *.pem

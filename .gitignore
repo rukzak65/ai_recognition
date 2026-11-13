@@ -1,0 +1,12 @@
+.venv/
+/uv.toml
+__pycache__/
+.pytest_cache/
+.env
+.env.*
+!.env.example
+/request.json
+/expected.json
+*.pdf
+*.pem
+*.key

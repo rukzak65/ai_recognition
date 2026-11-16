@@ -16,7 +16,7 @@
 2. Скопируй `.env.example` в `.env` и укажи хост.
 3. Скопируй `db.example.yaml` в `db.local.yaml`. В поле `dsn` укажи PostgreSQL DSN с логином без пароля. На строке под `password: |-` оставь два пробела отступа и вставь пароль как есть, без кавычек вокруг него и URL-кодировки. На Linux и macOS ПРИ НЕОБХОДИМОСТИ выполни `chmod 600 db.local.yaml`.
 4. Положи `tls.pem` и `tls.key` в корень проекта. Перед запуском укажи в `request.json` идентификатор тестового клиента в поле `clientExtRef` и тип документа в поле `type`.
-5. Положи PDF в `Docs/input`, а эталонный JSON в `Docs/expected`. Дай им одинаковое имя без учёта расширения, например `2ndfl.pdf` и `2ndfl.json`. В эталоне задай пути полей относительно `payload.request.content.prd` и их ожидаемые значения. Формат показан в `Docs/expected/expected.example.json`.
+5. Положи PDF в `Docs/input`, а эталонный JSON в `Docs/expected`. Дай им одинаковое имя без учёта расширения, например `2ndfl.pdf` и `2ndfl.json`. Можно скопировать `integration_log.payload` целиком и оставить только поля для проверки. Также работает формат с короткими путями внутри `request.content.prd`, как в `Docs/expected/expected.example.json`.
 6. В начале `test_recognition.py` задай имя сценария, например `CASE = "2ndfl"`, и запусти тест из папки проекта.
 
 ```bash

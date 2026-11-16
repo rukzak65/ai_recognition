@@ -25,6 +25,25 @@ def iter_expected_fields(data, prefix=""):
             yield path, value
 
 
+def iter_differences(actual, expected, path=""):
+    if type(actual) is not type(expected):
+        yield f"{path or 'payload'} — значение или тип отличается от эталона"
+    elif isinstance(expected, dict):
+        for key, value in expected.items():
+            field = f"{path}.{key}" if path else key
+            if key in actual:
+                yield from iter_differences(actual[key], value, field)
+            else:
+                yield f"{field} — поле отсутствует"
+    elif isinstance(expected, list):
+        if len(actual) != len(expected):
+            yield f"{path} — ожидалось элементов: {len(expected)}, получено: {len(actual)}"
+        for index, (item, expected_item) in enumerate(zip(actual, expected)):
+            yield from iter_differences(item, expected_item, f"{path}[{index}]")
+    elif actual != expected:
+        yield f"{path} — значение или тип отличается от эталона"
+
+
 def test_agent_recognizes_document():
     host = os.environ["API_HOST"].rstrip("/")
     pdf_path = Path("Docs/input") / f"{CASE}.pdf"
@@ -32,19 +51,7 @@ def test_agent_recognizes_document():
 
     with expected_path.open(encoding="utf-8") as file:
         expected = json.load(file)
-    if not isinstance(expected, dict):
-        pytest.fail(f"Укажи поля для проверки в {expected_path}")
-
-    full_payload = "request" in expected
-    expected_fields = []
-    for path, value in iter_expected_fields(expected):
-        if full_payload and path != "status":
-            if not path.startswith(PRD_PREFIX) or {"comment", "message"}.intersection(path.split(".")):
-                continue
-        if path != "status" and not path.startswith(("request.", "response.")):
-            path = PRD_PREFIX + path
-        expected_fields.append((path, value))
-    if not expected_fields:
+    if not isinstance(expected, dict) or not expected:
         pytest.fail(f"Укажи поля для проверки в {expected_path}")
 
     with open("db.local.yaml", encoding="utf-8") as file:
@@ -101,17 +108,21 @@ def test_agent_recognizes_document():
             pytest.fail(f"За {RESULT_TIMEOUT} секунд в integration_log не появился результат")
 
     created_at, payload = row
-    differences = []
-    for full_path, expected in expected_fields:
-        actual = payload
-        for key in full_path.split("."):
-            if not isinstance(actual, dict) or key not in actual:
-                differences.append(f"{full_path} — поле отсутствует")
-                break
-            actual = actual[key]
-        else:
-            if type(actual) is not type(expected) or actual != expected:
-                differences.append(f"{full_path} — значение или тип отличается от эталона")
+    if "request" in expected or "response" in expected:
+        differences = list(iter_differences(payload, expected))
+    else:
+        differences = []
+        for path, value in iter_expected_fields(expected):
+            if path != "status" and not path.startswith(("request.", "response.")):
+                path = PRD_PREFIX + path
+            actual = payload
+            for key in path.split("."):
+                if not isinstance(actual, dict) or key not in actual:
+                    differences.append(f"{path} — поле отсутствует")
+                    break
+                actual = actual[key]
+            else:
+                differences.extend(iter_differences(actual, value, path))
 
     if differences:
         details = "\n".join(f"- {difference}" for difference in differences)

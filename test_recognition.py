@@ -79,15 +79,19 @@ def test_agent_recognizes_document():
             pytest.fail(f"За {RESULT_TIMEOUT} секунд в integration_log не появился результат")
 
     created_at, payload = row
+    differences = []
     for field_path, expected in expected_fields.items():
         full_path = f"request.content.prd.{field_path}"
         actual = payload
         for key in full_path.split("."):
             if not isinstance(actual, dict) or key not in actual:
-                pytest.fail(f"В результате от {created_at} отсутствует поле {full_path}")
+                differences.append(f"{full_path} — поле отсутствует")
+                break
             actual = actual[key]
+        else:
+            if type(actual) is not type(expected) or actual != expected:
+                differences.append(f"{full_path} — значение или тип отличается от эталона")
 
-        if type(actual) is not type(expected) or actual != expected:
-            pytest.fail(
-                f"В результате от {created_at} поле {full_path} отличается от эталона"
-            )
+    if differences:
+        details = "\n".join(f"- {difference}" for difference in differences)
+        pytest.fail(f"В результате от {created_at} найдено расхождений: {len(differences)}\n{details}")

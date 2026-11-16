@@ -13,6 +13,16 @@ CASE = "2ndfl"
 OPERATION = "POST /integration/accompany/v1/ai-agent/recognition-result"
 RESULT_TIMEOUT = 60
 POLL_INTERVAL = 10
+PRD_PREFIX = "request.content.prd."
+
+
+def iter_expected_fields(data, prefix=""):
+    for key, value in data.items():
+        path = prefix + key
+        if isinstance(value, dict) and value:
+            yield from iter_expected_fields(value, path + ".")
+        else:
+            yield path, value
 
 
 def test_agent_recognizes_document():
@@ -21,8 +31,20 @@ def test_agent_recognizes_document():
     expected_path = Path("Docs/expected") / f"{CASE}.json"
 
     with expected_path.open(encoding="utf-8") as file:
-        expected_fields = json.load(file)
-    if not isinstance(expected_fields, dict) or not expected_fields:
+        expected = json.load(file)
+    if not isinstance(expected, dict):
+        pytest.fail(f"Укажи поля для проверки в {expected_path}")
+
+    full_payload = "request" in expected
+    expected_fields = []
+    for path, value in iter_expected_fields(expected):
+        if full_payload and path != "status":
+            if not path.startswith(PRD_PREFIX) or {"comment", "message"}.intersection(path.split(".")):
+                continue
+        if path != "status" and not path.startswith(("request.", "response.")):
+            path = PRD_PREFIX + path
+        expected_fields.append((path, value))
+    if not expected_fields:
         pytest.fail(f"Укажи поля для проверки в {expected_path}")
 
     with open("db.local.yaml", encoding="utf-8") as file:
@@ -80,8 +102,7 @@ def test_agent_recognizes_document():
 
     created_at, payload = row
     differences = []
-    for field_path, expected in expected_fields.items():
-        full_path = f"request.content.prd.{field_path}"
+    for full_path, expected in expected_fields:
         actual = payload
         for key in full_path.split("."):
             if not isinstance(actual, dict) or key not in actual:
